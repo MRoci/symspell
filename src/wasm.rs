@@ -1,6 +1,6 @@
 use std::str;
 use string_strategy::{AsciiStringStrategy, UnicodeiStringStrategy};
-use symspell::{SymSpell, SymSpellBuilder, Verbosity};
+use symspell::{SymSpell, Verbosity};
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize)]
@@ -50,23 +50,21 @@ impl JSSymSpell {
 
         if params.is_ascii {
             ret = JSSymSpell {
-                symspell: EJSSymSpell::Ascii(
-                    SymSpellBuilder::default()
-                        .max_dictionary_edit_distance(params.max_edit_distance as i64)
-                        .prefix_length(params.prefix_length as i64)
-                        .count_threshold(params.count_threshold as i64)
-                        .build()?,
-                ),
+                symspell: EJSSymSpell::Ascii(SymSpell::new(
+                    params.max_edit_distance as i64,
+                    params.prefix_length as i64,
+                    params.count_threshold as i64,
+                    0 as i64,
+                )),
             };
         } else {
             ret = JSSymSpell {
-                symspell: EJSSymSpell::Unicode(
-                    SymSpellBuilder::default()
-                        .max_dictionary_edit_distance(params.max_edit_distance as i64)
-                        .prefix_length(params.prefix_length as i64)
-                        .count_threshold(params.count_threshold as i64)
-                        .build()?,
-                ),
+                symspell: EJSSymSpell::Unicode(SymSpell::new(
+                    params.max_edit_distance as i64,
+                    params.prefix_length as i64,
+                    params.count_threshold as i64,
+                    0 as i64,
+                )),
             };
         }
         Ok(ret)

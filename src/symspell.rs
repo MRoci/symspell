@@ -27,6 +27,7 @@ pub enum Verbosity {
 //// truncated or filtered
 static N: i64 = 1_024_908_267_229;
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Builder, PartialEq)]
 pub struct SymSpell<T: StringStrategy> {
     /// Maximum edit distance for doing lookups.
@@ -51,9 +52,41 @@ pub struct SymSpell<T: StringStrategy> {
     string_strategy: T,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl<T: StringStrategy> Default for SymSpell<T> {
     fn default() -> SymSpell<T> {
         SymSpellBuilder::default().build().unwrap()
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub struct SymSpell<T: StringStrategy> {
+    /// Maximum edit distance for doing lookups.
+    max_dictionary_edit_distance: i64,
+    /// The length of word prefixes used for spell checking.
+    prefix_length: i64,
+    /// The minimum frequency count for dictionary words to be considered correct spellings.
+    count_threshold: i64,
+    max_length: i64,
+    deletes: HashMap<u64, Vec<String>>,
+    words: HashMap<String, i64>,
+    distance_algorithm: DistanceAlgorithm,
+    string_strategy: T,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl<T: StringStrategy> Default for SymSpell<T> {
+    fn default() -> SymSpell<T> {
+        SymSpell {
+            max_dictionary_edit_distance: 2,
+            prefix_length: 7,
+            count_threshold: 1,
+            max_length: 0,
+            deletes: HashMap::new(),
+            words: HashMap::new(),
+            distance_algorithm: DistanceAlgorithm::Damerau,
+            string_strategy: T::new(),
+        }
     }
 }
 
@@ -66,6 +99,24 @@ impl<T: StringStrategy> SymSpell<T> {
     /// * `term_index` - The column position of the word.
     /// * `count_index` - The column position of the frequency count.
     /// * `separator` - Separator between word and frequency
+    #[cfg(target_arch = "wasm32")]
+    pub fn new(
+        max_dictionary_edit_distance: i64,
+        prefix_length: i64,
+        count_threshold: i64,
+        max_length: i64,
+    ) -> Self {
+        SymSpell {
+            max_dictionary_edit_distance,
+            prefix_length,
+            count_threshold,
+            max_length,
+            deletes: HashMap::new(),
+            words: HashMap::new(),
+            distance_algorithm: DistanceAlgorithm::Damerau,
+            string_strategy: T::new(),
+        }
+    }
     pub fn load_dictionary(
         &mut self,
         corpus: &str,
